@@ -740,11 +740,19 @@ NS_ENUM(NSInteger, SiteSettingsSection) {
     }
 }
 
+- (void)showStartOverForBlog:(Blog *)blog
+{
+    NSParameterAssert(blog.isAdmin);
+
+    StartOverViewController *viewController = [StartOverViewController new];
+    [self.navigationController pushViewController:viewController animated:YES];
+}
+
 - (void)tableView:(UITableView *)tableView didSelectInAdvancedSectionRow:(NSInteger)row
 {
     switch (row) {
         case SiteSettingsAdvancedStartOver: {
-            // TODO: implement Start Over handler
+            [self showStartOverForBlog:self.blog];
         } break;
         case SiteSettingsAdvancedDeleteSite: {
             // TODO: implement Delete Site handler
