@@ -744,7 +744,7 @@ NS_ENUM(NSInteger, SiteSettingsSection) {
 {
     NSParameterAssert(blog.isAdmin);
 
-    StartOverViewController *viewController = [StartOverViewController new];
+    StartOverViewController *viewController = [[StartOverViewController alloc] initWithBlog:blog];
     [self.navigationController pushViewController:viewController animated:YES];
 }
 

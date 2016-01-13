@@ -9,8 +9,16 @@ import WordPressShared
 
 final class StartOverViewController: UITableViewController
 {
-    // MARK: - Properties
+    // MARK: - Properties: must be set by creator
+    
+    /**
+    *  @brief      The blog to remove content from
+    *  @details    Must be set by creator
+    */
+    var blog : Blog!
 
+    // MARK: - Properties
+    
     var tableViewModel = ImmuTable(sections: []) {
         didSet {
             if isViewLoaded() {
@@ -21,8 +29,9 @@ final class StartOverViewController: UITableViewController
 
     // MARK: - UIViewController
 
-    required convenience init() {
+    convenience init(blog: Blog) {
         self.init(style: .Grouped)
+        self.blog = blog
     }
     
     override func viewDidLoad() {
@@ -129,9 +138,36 @@ final class StartOverViewController: UITableViewController
 
     private func contactSupport() -> ImmuTableActionType {
         return { [unowned self] row in
-            // TODO: Implement Helpshift
             self.tableView.deselectSelectedRowWithAnimation(true)
+
+            if HelpshiftUtils.isHelpshiftEnabled() {
+                self.setupHelpshift(self.blog.account)
+                
+                let metadata = self.helpshiftMetadata(self.blog)
+                Helpshift.sharedInstance().showConversation(self, withOptions: metadata)
+            } else {
+                let contact = NSURL(string: "https://support.wordpress.com/contact/")!
+                UIApplication.sharedApplication().openURL(contact)
+            }
+            
         }
     }
 
+    private func setupHelpshift(account: WPAccount) {
+        let user = account.userID.stringValue
+        Helpshift.setUserIdentifier(user)
+        
+        let name = account.username
+        let email = account.email
+        Helpshift.setName(name, andEmail: email)
+    }
+    
+    private func helpshiftMetadata(blog: Blog) -> [NSObject: AnyObject] {
+        let options: [String: String] = [
+            "Source": "Start Over",
+            "Blog": blog.logDescription(),
+            ]
+
+        return [HSCustomMetadataKey: options]
+    }
 }
