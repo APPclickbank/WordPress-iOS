@@ -15,7 +15,6 @@
 
 #import <Helpshift/Helpshift.h>
 #import <Simperium/Simperium.h>
-#import <Mixpanel/Mixpanel.h>
 #import "Blog.h"
 #import "WPAnalyticsTrackerWPCom.h"
 
@@ -27,11 +26,7 @@
 #pragma mark Constants
 #pragma mark ====================================================================================
 
-static NSString *const NotificationsDeviceToken                     = @"apnsDeviceToken";
-
-static NSString *const NotificationActionCommentReply               = @"COMMENT_REPLY";
-static NSString *const NotificationActionCommentLike                = @"COMMENT_LIKE";
-static NSString *const NotificationActionCommentApprove             = @"COMMENT_MODERATE_APPROVE";
+static NSString *const NotificationsDeviceToken = @"apnsDeviceToken";
 
 
 #pragma mark ====================================================================================
@@ -65,10 +60,6 @@ static NSString *const NotificationActionCommentApprove             = @"COMMENT_
         return;
     }
     
-    if ([[userInfo stringForKey:@"origin"] isEqualToString:@"mp"]) {
-        [self handleMixpanelPushNotification:userInfo];
-        return;
-    }
     
     // WordPress.com Push Authentication Notification
     // Due to the Background Notifications entitlement, any given Push Notification's userInfo might be received
@@ -121,86 +112,6 @@ static NSString *const NotificationActionCommentApprove             = @"COMMENT_
                 completionHandler(result);
             }];
         }
-    }
-}
-
-+ (void)handleNotificationForApplicationLaunch:(NSDictionary *)launchOptions
-{
-    NSDictionary *remoteNotif = launchOptions[UIApplicationLaunchOptionsRemoteNotificationKey];
-    if (remoteNotif) {
-        DDLogVerbose(@"Launched with a remote notification as parameter:  %@", remoteNotif);
-        [[WPTabBarController sharedInstance] showNotificationsTab];
-    }
-}
-
-+ (void)handleActionWithIdentifier:(NSString *)identifier forRemoteNotification:(NSDictionary *)remoteNotification
-{
-    // Ensure we have a WP.com account
-    NSManagedObjectContext *context = [[ContextManager sharedInstance] mainContext];
-    AccountService *accountService = [[AccountService alloc] initWithManagedObjectContext:context];
-    WPAccount *defaultAccount = [accountService defaultWordPressComAccount];
-    
-    if (![[defaultAccount restApi] hasCredentials]) {
-        return;
-    }
-    
-    // Comment actions
-    if ([identifier isEqualToString:NotificationActionCommentLike] || [identifier isEqualToString:NotificationActionCommentApprove]) {
-        // Get the site and comment id
-        NSNumber *siteID = remoteNotification[@"blog_id"];
-        NSNumber *commentID = remoteNotification[@"comment_id"];
-        
-        if (siteID && commentID) {
-            NSManagedObjectContext *context = [[ContextManager sharedInstance] newDerivedContext];
-            CommentService *commentService = [[CommentService alloc] initWithManagedObjectContext:context];
-
-            if ([identifier isEqualToString:NotificationActionCommentLike]) {
-                [commentService likeCommentWithID:commentID siteID:siteID
-                                          success:^{
-                                              DDLogInfo(@"Liked comment from push notification");
-                                          }
-                                          failure:^(NSError *error) {
-                                              DDLogInfo(@"Couldn't like comment from push notification");
-                                          }];
-            } else {
-                [commentService approveCommentWithID:commentID siteID:siteID
-                                             success:^{
-                                                 DDLogInfo(@"Successfully moderated comment from push notification");
-                                             }
-                                             failure:^(NSError *error) {
-                                                 DDLogInfo(@"Couldn't moderate comment from push notification");
-                                             }];
-            }
-        }
-    } else if ([identifier isEqualToString:NotificationActionCommentReply]) {
-        // Load notifications detail view
-        NSString *notificationID = [[remoteNotification numberForKey:@"note_id"] stringValue];
-        [[WPTabBarController sharedInstance] showNotificationsTabForNoteWithID:notificationID];
-    }
-}
-
-
-#pragma mark - Mixpanel A/B Tests
-
-+ (void)handleMixpanelPushNotification:(NSDictionary *)userInfo
-{
-    NSString *targetToOpen = [userInfo stringForKey:@"open"];
-    if ([targetToOpen isEqualToString:@"reader"]) {
-        [[WPTabBarController sharedInstance] showReaderTab];
-    } else if ([targetToOpen isEqualToString:@"notifications"]) {
-        [[WPTabBarController sharedInstance] showNotificationsTab];
-    } else if ([targetToOpen isEqualToString:@"stats"]) {
-        [self openStatsForLastUsedOrFirstWPComBlog];
-    }
-}
-
-+ (void)openStatsForLastUsedOrFirstWPComBlog
-{
-    NSManagedObjectContext *context = [[ContextManager sharedInstance] mainContext];
-    BlogService *blogService = [[BlogService alloc] initWithManagedObjectContext:context];
-    Blog *blog = [blogService lastUsedOrFirstBlogThatSupports:BlogFeatureStats];
-    if (blog != nil) {
-        [[WPTabBarController sharedInstance] switchMySitesTabToStatsViewForBlog:blog];
     }
 }
 

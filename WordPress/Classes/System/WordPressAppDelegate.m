@@ -128,11 +128,6 @@ int ddLogLevel                                                  = DDLogLevelInfo
 {
     DDLogVerbose(@"didFinishLaunchingWithOptions state: %d", application.applicationState);
 
-    // Launched by tapping a notification
-    if (application.applicationState == UIApplicationStateActive) {
-        [NotificationsManager handleNotificationForApplicationLaunch:launchOptions];
-    }
-
     [self.window makeKeyAndVisible];
     [self showWelcomeScreenIfNeededAnimated:NO];
     [self setupLookback];
@@ -378,9 +373,10 @@ int ddLogLevel                                                  = DDLogLevelInfo
     [WPFontManager merriweatherRegularFontOfSize:16.0];
 
     [self customizeAppearance];
-    
-    // Push notifications
-    [[PushNotificationsManager sharedInstance] registerForPushNotifications];
+
+    // Notifications
+    [[PushNotificationsManager sharedInstance] registerForRemoteNotifications];
+    [[InteractiveNotificationsHandler sharedInstance] registerForUserNotifications];
     
     // Deferred tasks to speed up app launch
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
@@ -425,7 +421,7 @@ int ddLogLevel                                                  = DDLogLevelInfo
                                         forRemoteNotification:(NSDictionary *)remoteNotification
                                             completionHandler:(void (^)())completionHandler
 {
-    [NotificationsManager handleActionWithIdentifier:identifier forRemoteNotification:remoteNotification];
+    [[InteractiveNotificationsHandler sharedInstance] handleActionWithIdentifier:identifier remoteNotification:remoteNotification];
     
     completionHandler();
 }
