@@ -748,6 +748,14 @@ NS_ENUM(NSInteger, SiteSettingsSection) {
     [self.navigationController pushViewController:viewController animated:YES];
 }
 
+- (void)showDeleteSiteForBlog:(Blog *)blog
+{
+    NSParameterAssert(blog.isAdmin);
+
+    DeleteSiteViewController *viewController = [[DeleteSiteViewController alloc] initWithBlog:blog];
+    [self.navigationController pushViewController:viewController animated:YES];
+}
+
 - (void)tableView:(UITableView *)tableView didSelectInAdvancedSectionRow:(NSInteger)row
 {
     switch (row) {
@@ -755,7 +763,7 @@ NS_ENUM(NSInteger, SiteSettingsSection) {
             [self showStartOverForBlog:self.blog];
         } break;
         case SiteSettingsAdvancedDeleteSite: {
-            // TODO: implement Delete Site handler
+            [self showDeleteSiteForBlog:self.blog];
         } break;
     }
 }
