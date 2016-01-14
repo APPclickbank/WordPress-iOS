@@ -21,13 +21,15 @@ final class DeleteSiteViewController: UITableViewController
 
     // MARK: - Properties
     
-    var tableViewModel = ImmuTable(sections: []) {
+    private var tableViewModel = ImmuTable(sections: []) {
         didSet {
             if isViewLoaded() {
                 tableView.reloadData()
             }
         }
     }
+    
+    private weak var deleteAction: UIAlertAction?
 
     // MARK: - UIViewController
 
@@ -75,7 +77,7 @@ final class DeleteSiteViewController: UITableViewController
         
         let delete = DestructiveButtonRow(
             title: NSLocalizedString("Delete Site", comment: "Button to delete site on Start Over settings page"),
-            action: deleteSite())
+            action: confirmDeleteSite())
 
         tableViewModel =  ImmuTable(sections: [
             ImmuTableSection(headerText: domainHeading, rows: [], footerText: domainDetail),
@@ -165,10 +167,44 @@ final class DeleteSiteViewController: UITableViewController
         }
     }
     
-    private func deleteSite() -> ImmuTableActionType {
+    private func confirmDeleteSite() -> ImmuTableActionType {
         return { [unowned self] row in
             self.tableView.deselectSelectedRowWithAnimation(true)
+
+            let title = NSLocalizedString("Delete Site", comment: "Title of Delete Site confirmation alert")
+            let messageFormat = NSLocalizedString("Enter the primary domain to confirm\n“%@”", comment: "Message of Delete Site confirmation alert")
+            let message = String(format: messageFormat, self.primaryDomain)
+            let alertController = UIAlertController(title: title, message: message, preferredStyle: .Alert)
+
+            let cancelTitle = NSLocalizedString("Cancel", comment: "Delete site cancel action title")
+            alertController.addCancelActionWithTitle(cancelTitle, handler: nil)
+
+            let deleteTitle = NSLocalizedString("Delete", comment: "Delete site confirmation action title")
+            print("deleteAction: \(self.deleteAction)")
+            let deleteAction = UIAlertAction(title: deleteTitle, style: .Destructive, handler: { (action: UIAlertAction) in
+                    self.deleteSiteConfirmed()
+                })
+            if false { deleteAction.enabled = false }
+            alertController.addAction(deleteAction)
+            self.deleteAction = deleteAction
+
+            alertController.addTextFieldWithConfigurationHandler({ (textField: UITextField) in
+                    textField.addTarget(self, action: "alertTextFieldDidChange:", forControlEvents: .EditingChanged)
+                })
+
+            self.presentViewController(alertController, animated: true, completion: nil)
         }
     }
-
+    
+    func alertTextFieldDidChange(sender: UITextField) {
+        deleteAction?.enabled = sender.text == primaryDomain
+    }
+    
+    private func deleteSiteConfirmed() {
+        let blogService = BlogService(managedObjectContext: ContextManager.sharedInstance().mainContext)
+        
+        // TODO: blogService.deleteBlog(blog)
+        
+        navigationController?.popToRootViewControllerAnimated(true)
+    }
 }
