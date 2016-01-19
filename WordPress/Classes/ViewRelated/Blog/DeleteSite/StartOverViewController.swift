@@ -136,7 +136,7 @@ final class StartOverViewController: UITableViewController
 
     // MARK: - Actions
 
-    private func contactSupport() -> ImmuTableActionType {
+    private func contactSupport() -> ImmuTableAction {
         return { [unowned self] row in
             self.tableView.deselectSelectedRowWithAnimation(true)
 
