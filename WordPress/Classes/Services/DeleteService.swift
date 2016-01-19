@@ -41,7 +41,7 @@ public class DeleteService : LocalCoreDataService
         
         let jetpackAccount = blog.jetpackAccount
 
-        managedObjectContext.delete(blog)
+        managedObjectContext.deleteObject(blog)
         managedObjectContext.processPendingChanges()
         
         if let jetpackAccount = jetpackAccount {
